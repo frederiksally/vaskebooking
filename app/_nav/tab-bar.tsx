@@ -28,7 +28,7 @@ export function TabBar() {
               <Link
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center gap-1 px-2 py-2.5 text-xs transition-colors ${
+                className={`flex flex-col items-center gap-1.5 px-3 py-3.5 text-xs transition-colors ${
                   active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
