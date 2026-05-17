@@ -26,7 +26,7 @@ export const DANISH_MESSAGES: Record<RuleCode, string> = {
   HORIZON_EXCEEDED: 'Du kan kun booke op til 14 dage frem.',
   OUT_OF_HOURS: 'Vasketider er kun mellem 07:00 og 22:00.',
   NOT_FOUND_OR_NOT_YOURS: 'Bookingen findes ikke eller tilhører ikke din lejlighed.',
-  OWN_APARTMENT: 'Du kan ikke vagte din egen booking.',
+  OWN_APARTMENT: 'Du kan ikke holde øje med din egen booking.',
   INVALID_PASSCODE: 'Forkert kode.',
   INVALID_APARTMENT: 'Ugyldig lejlighed.',
 }

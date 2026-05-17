@@ -35,7 +35,7 @@ export function BookingsClient({
   function onUnwatch(date: string, hour: number) {
     start(async () => {
       await unwatchSlot({ date, hour })
-      toast('Vagt fjernet')
+      toast('Stoppet med at holde øje med tiden')
     })
   }
 
@@ -57,9 +57,9 @@ export function BookingsClient({
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Vagter</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Tider du holder øje med</CardTitle></CardHeader>
         <CardContent>
-          {watches.length === 0 && <p className="text-sm text-muted-foreground">Ingen vagter.</p>}
+          {watches.length === 0 && <p className="text-sm text-muted-foreground">Du holder ikke øje med nogen tider.</p>}
           <ul className="space-y-2">
             {watches.map((w) => (
               <li key={w.id} className="flex items-center justify-between rounded-md border p-2">
