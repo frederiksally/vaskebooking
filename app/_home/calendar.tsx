@@ -6,6 +6,7 @@ import { da } from 'date-fns/locale'
 import { todayInCph, fmtDayDanish, isoDateInCph } from '@/lib/time'
 import type { Apartment } from '@/lib/apartments'
 import { SlotList } from './slot-button'
+import { MachineStatus } from './machine-status'
 
 export interface BookingLite { id: string; apartment: string; date: string; hour: number }
 
@@ -29,7 +30,9 @@ export function HomeClient({ apartment, bookings, focus }: Props) {
   const dayBookings = bookings.filter((b) => b.date === dateStr)
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6 p-4 sm:p-6 md:grid-cols-[auto_1fr] md:gap-10 lg:gap-12">
+    <div className="mx-auto w-full max-w-6xl space-y-4 p-4 sm:p-6 md:space-y-6">
+      <MachineStatus bookings={bookings} />
+      <div className="grid gap-6 md:grid-cols-[auto_1fr] md:gap-10 lg:gap-12">
       <Calendar
         mode="single"
         selected={selected}
@@ -56,6 +59,7 @@ export function HomeClient({ apartment, bookings, focus }: Props) {
           dayBookings={dayBookings}
           focusHour={focus?.date === dateStr ? focus.hour : null}
         />
+      </div>
       </div>
     </div>
   )
