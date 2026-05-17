@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -16,6 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Vaskebooking",
   description: "Book vasketider i andelsforeningen",
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Vask' },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0a',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -31,6 +38,11 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Toaster richColors position="top-center" />
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })) }`,
+          }}
+        />
       </body>
     </html>
   );
