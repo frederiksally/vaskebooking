@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TabBar } from "./_nav/tab-bar";
+import { ServiceWorkerUpdater } from "./_nav/sw-updater";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,11 +41,7 @@ export default function RootLayout({
         <Toaster richColors position="top-center" />
         <main className="flex-1 pb-2">{children}</main>
         <TabBar />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })) }`,
-          }}
-        />
+        <ServiceWorkerUpdater />
       </body>
     </html>
   );
