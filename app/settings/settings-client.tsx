@@ -117,7 +117,7 @@ export function SettingsClient({ apartment, initialReminder, initialFreed }: Pro
                 <Switch id="reminder" disabled={!subscribed} checked={reminder} onCheckedChange={onReminderChange} />
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="freed">Besked når en booket tid bliver ledig</Label>
+                <Label htmlFor="freed">Besked når en tid du holder øje med, bliver ledig</Label>
                 <Switch id="freed" disabled={!subscribed} checked={freed} onCheckedChange={onFreedChange} />
               </div>
             </>
