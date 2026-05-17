@@ -37,4 +37,14 @@ describe('time', () => {
     expect(daysFromTodayCph('2026-05-17', new Date('2026-05-17T10:00:00+02:00'))).toBe(0)
     expect(daysFromTodayCph('2026-05-31', new Date('2026-05-17T10:00:00+02:00'))).toBe(14)
   })
+
+  it('daysFromTodayCph crosses month boundaries correctly', () => {
+    // May 17 -> June 1 = 15 days. Off-by-one bug here previously masked HORIZON_EXCEEDED.
+    expect(daysFromTodayCph('2026-06-01', new Date('2026-05-17T10:00:00+02:00'))).toBe(15)
+  })
+
+  it('daysFromTodayCph spans the spring DST transition', () => {
+    // 2026 spring forward: Sun Mar 29. CPH skips 02:00 -> 03:00.
+    expect(daysFromTodayCph('2026-03-30', new Date('2026-03-28T10:00:00+01:00'))).toBe(2)
+  })
 })

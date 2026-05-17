@@ -35,7 +35,9 @@ export function daysFromTodayCph(date: string, now: Date = new Date()): number {
   // midnights solely to count whole days between them; no UTC day ever crosses
   // a DST gap, so the integer-day division is exact.
   const today = todayInCph(now)
-  const a = Date.UTC(...(today.split('-').map(Number) as [number, number, number]))
-  const b = Date.UTC(...(date.split('-').map(Number) as [number, number, number]))
-  return Math.round((b - a) / 86_400_000)
+  const toUtc = (s: string) => {
+    const [y, m, d] = s.split('-').map(Number) as [number, number, number]
+    return Date.UTC(y, m - 1, d)
+  }
+  return Math.round((toUtc(date) - toUtc(today)) / 86_400_000)
 }
