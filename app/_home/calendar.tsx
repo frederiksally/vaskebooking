@@ -38,6 +38,8 @@ export function HomeClient({ apartment, bookings, focus }: Props) {
         weekStartsOn={1}
         modifiers={{ booked: fullyBookedDates }}
         modifiersClassNames={{ booked: 'line-through opacity-60' }}
+        className="w-auto sm:[--cell-size:--spacing(10)] md:[--cell-size:--spacing(11)]"
+        classNames={{ root: 'w-auto' }}
         disabled={(d) => {
           const iso = isoDateInCph(d)
           if (iso < today) return true
