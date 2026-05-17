@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, eq, isNull, lte, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
 import { db, schema } from '@/db'
 import { sendReminderPush } from '@/lib/push'
 
@@ -9,22 +9,35 @@ export async function GET(req: Request) {
   if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`)
     return new Response('Unauthorized', { status: 401 })
 
-  const due = await db
-    .select({
-      bookingId: schema.reminderJobs.bookingId,
-      date: schema.bookings.date,
-      hour: schema.bookings.hour,
-      apartment: schema.bookings.apartment,
-    })
-    .from(schema.reminderJobs)
-    .innerJoin(schema.bookings, eq(schema.reminderJobs.bookingId, schema.bookings.id))
+  // Atomic claim: mark all due jobs as sent BEFORE dispatching. If the cron
+  // is retried (e.g. timeout), only freshly-pending jobs get picked up; already-
+  // claimed jobs are skipped, preventing duplicate notifications.
+  const claimed = await db
+    .update(schema.reminderJobs)
+    .set({ sentAt: new Date() })
     .where(and(
       isNull(schema.reminderJobs.sentAt),
       lte(schema.reminderJobs.fireAt, sql`now() + interval '5 minutes'`),
     ))
+    .returning({ bookingId: schema.reminderJobs.bookingId })
+
+  if (claimed.length === 0) {
+    return Response.json({ ok: true, jobsProcessed: 0, pushesSent: 0 })
+  }
+
+  const claimedIds = claimed.map((r) => r.bookingId)
+  const jobs = await db
+    .select({
+      bookingId: schema.bookings.id,
+      date: schema.bookings.date,
+      hour: schema.bookings.hour,
+      apartment: schema.bookings.apartment,
+    })
+    .from(schema.bookings)
+    .where(inArray(schema.bookings.id, claimedIds))
 
   let sent = 0
-  for (const job of due) {
+  for (const job of jobs) {
     const subs = await db
       .select({
         endpoint: schema.pushSubscriptions.endpoint,
@@ -36,15 +49,11 @@ export async function GET(req: Request) {
         eq(schema.pushSubscriptions.apartment, job.apartment),
         eq(schema.pushSubscriptions.reminderEnabled, true),
       ))
-    for (const s of subs) {
-      await sendReminderPush(s, job.bookingId, job.date, job.hour)
-      sent++
-    }
-    await db
-      .update(schema.reminderJobs)
-      .set({ sentAt: new Date() })
-      .where(eq(schema.reminderJobs.bookingId, job.bookingId))
+    await Promise.allSettled(
+      subs.map((s) => sendReminderPush(s, job.bookingId, job.date, job.hour)),
+    )
+    sent += subs.length
   }
 
-  return Response.json({ ok: true, jobsProcessed: due.length, pushesSent: sent })
+  return Response.json({ ok: true, jobsProcessed: jobs.length, pushesSent: sent })
 }
