@@ -40,7 +40,7 @@ export function BookingsClient({
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-4 p-4">
+    <div className="mx-auto w-full max-w-2xl space-y-4 p-4 sm:p-6">
       <Card>
         <CardHeader><CardTitle>Mine bookinger</CardTitle></CardHeader>
         <CardContent>

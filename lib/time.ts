@@ -30,6 +30,10 @@ export function todayInCph(now: Date = new Date()): string {
   return formatInTimeZone(now, TZ, 'yyyy-MM-dd')
 }
 
+export function isoDateInCph(d: Date): string {
+  return formatInTimeZone(d, TZ, 'yyyy-MM-dd')
+}
+
 export function daysFromTodayCph(date: string, now: Date = new Date()): number {
   // Both inputs are CPH-local YYYY-MM-DD strings. We materialize them as UTC
   // midnights solely to count whole days between them; no UTC day ever crosses

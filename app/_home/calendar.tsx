@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Calendar } from '@/components/ui/calendar'
 import { da } from 'date-fns/locale'
-import { todayInCph, fmtDayDanish } from '@/lib/time'
+import { todayInCph, fmtDayDanish, isoDateInCph } from '@/lib/time'
 import type { Apartment } from '@/lib/apartments'
 import { SlotList } from './slot-button'
 
@@ -18,7 +18,7 @@ interface Props {
 export function HomeClient({ apartment, bookings, focus }: Props) {
   const today = todayInCph()
   const [selected, setSelected] = useState<Date>(() => focus ? new Date(focus.date + 'T12:00:00') : new Date(today + 'T12:00:00'))
-  const dateStr = useMemo(() => selected.toISOString().slice(0, 10), [selected])
+  const dateStr = useMemo(() => isoDateInCph(selected), [selected])
 
   const fullyBookedDates = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -29,7 +29,7 @@ export function HomeClient({ apartment, bookings, focus }: Props) {
   const dayBookings = bookings.filter((b) => b.date === dateStr)
 
   return (
-    <div className="mx-auto grid max-w-3xl gap-6 p-4 md:grid-cols-2">
+    <div className="mx-auto grid w-full max-w-6xl gap-6 p-4 sm:p-6 md:grid-cols-[auto_1fr] md:gap-10 lg:gap-12">
       <Calendar
         mode="single"
         selected={selected}
@@ -39,10 +39,10 @@ export function HomeClient({ apartment, bookings, focus }: Props) {
         modifiers={{ booked: fullyBookedDates }}
         modifiersClassNames={{ booked: 'line-through opacity-60' }}
         disabled={(d) => {
-          const iso = d.toISOString().slice(0, 10)
+          const iso = isoDateInCph(d)
           if (iso < today) return true
           const horizon = new Date(today + 'T12:00:00'); horizon.setDate(horizon.getDate() + 14)
-          return d > horizon
+          return iso > isoDateInCph(horizon)
         }}
       />
 

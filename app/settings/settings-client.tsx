@@ -90,7 +90,7 @@ export function SettingsClient({ apartment, initialReminder, initialFreed }: Pro
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-4 p-6">
+    <div className="mx-auto w-full max-w-2xl space-y-4 p-4 sm:p-6">
       <Card>
         <CardHeader><CardTitle>Lejlighed</CardTitle></CardHeader>
         <CardContent className="flex items-center justify-between">
