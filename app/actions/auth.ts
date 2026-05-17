@@ -27,10 +27,6 @@ export async function login(form: FormData): Promise<ActionResult> {
   redirect('/')
 }
 
-export async function changeApartment(form: FormData): Promise<ActionResult> {
-  return await login(form)
-}
-
 export async function logout(): Promise<void> {
   await clearSession()
   redirect('/onboarding')

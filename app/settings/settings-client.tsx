@@ -93,9 +93,8 @@ export function SettingsClient({ apartment, initialReminder, initialFreed }: Pro
     <div className="mx-auto w-full max-w-2xl space-y-4 p-4 sm:p-6">
       <Card>
         <CardHeader><CardTitle>Lejlighed</CardTitle></CardHeader>
-        <CardContent className="flex items-center justify-between">
+        <CardContent>
           <span>{apartment}</span>
-          <a href="/onboarding" className="text-sm text-primary underline-offset-4 hover:underline">Skift</a>
         </CardContent>
       </Card>
 
@@ -118,7 +117,7 @@ export function SettingsClient({ apartment, initialReminder, initialFreed }: Pro
                 <Switch id="reminder" disabled={!subscribed} checked={reminder} onCheckedChange={onReminderChange} />
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="freed">Besked når vagtede tider bliver ledige</Label>
+                <Label htmlFor="freed">Besked når en booket tid bliver ledig</Label>
                 <Switch id="freed" disabled={!subscribed} checked={freed} onCheckedChange={onFreedChange} />
               </div>
             </>
