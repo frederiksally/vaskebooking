@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { isoDateInCph, slotStartUtc } from '@/lib/time'
 import { apartmentColor, type Apartment } from '@/lib/apartments'
 import type { BookingLite } from './calendar'
@@ -57,20 +57,46 @@ function computeStatus(bookings: BookingLite[], now: Date): Status {
   }
 }
 
-export function MachineStatus({ bookings }: Props) {
-  const [now, setNow] = useState<Date | null>(null)
-
-  useEffect(() => {
-    setNow(new Date())
-    const tick = () => setNow(new Date())
-    const id = setInterval(tick, 60_000)
-    const onVisible = () => document.visibilityState === 'visible' && tick()
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      clearInterval(id)
-      document.removeEventListener('visibilitychange', onVisible)
+// A shared "current minute" clock exposed through useSyncExternalStore. The
+// server snapshot is null (so we render nothing and avoid hydration drift); the
+// client snapshot is the current time, refreshed every minute and whenever the
+// tab becomes visible. A single interval is shared across all subscribers.
+const clock = {
+  listeners: new Set<() => void>(),
+  interval: null as ReturnType<typeof setInterval> | null,
+  onVisible: null as (() => void) | null,
+  now: null as Date | null,
+  emit() {
+    clock.now = new Date()
+    for (const l of clock.listeners) l()
+  },
+  subscribe(listener: () => void): () => void {
+    if (clock.listeners.size === 0) {
+      clock.now = new Date()
+      clock.interval = setInterval(() => clock.emit(), 60_000)
+      clock.onVisible = () => document.visibilityState === 'visible' && clock.emit()
+      document.addEventListener('visibilitychange', clock.onVisible)
     }
-  }, [])
+    clock.listeners.add(listener)
+    return () => {
+      clock.listeners.delete(listener)
+      if (clock.listeners.size === 0) {
+        if (clock.interval) clearInterval(clock.interval)
+        if (clock.onVisible) document.removeEventListener('visibilitychange', clock.onVisible)
+        clock.interval = null
+        clock.onVisible = null
+        clock.now = null
+      }
+    }
+  },
+}
+
+export function MachineStatus({ bookings }: Props) {
+  const now = useSyncExternalStore(
+    (l) => clock.subscribe(l),
+    () => clock.now,
+    () => null,
+  )
 
   // Render nothing on the server / first paint to avoid hydration drift.
   if (!now) return null

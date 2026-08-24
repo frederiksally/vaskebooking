@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -21,17 +21,25 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+// SSR renders as "not mounted"; the client subscribes once and reports true.
+// This lets us read browser-only capabilities without a hydration mismatch or
+// a setState-in-effect.
+const emptySubscribe = () => () => {}
+function useMounted(): boolean {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false)
+}
+
 export function SettingsClient({ apartment, initialReminder, initialFreed }: Props) {
-  const [supported, setSupported] = useState(false)
-  const [iosBlocked, setIosBlocked] = useState(false)
+  const mounted = useMounted()
   const [subscribed, setSubscribed] = useState(false)
   const [reminder, setReminder] = useState(initialReminder)
   const [freed, setFreed] = useState(initialFreed)
   const [installPromptEvt, setInstallPromptEvt] = useState<BeforeInstallPromptEvent | null>(null)
 
+  const supported = mounted && pushSupported()
+  const iosBlocked = mounted && isIOS() && !isStandalone()
+
   useEffect(() => {
-    setSupported(pushSupported())
-    setIosBlocked(isIOS() && !isStandalone())
     if (pushSupported()) {
       navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription().then((s) => setSubscribed(!!s)))
     }
@@ -130,7 +138,7 @@ export function SettingsClient({ apartment, initialReminder, initialFreed }: Pro
         <CardContent className="space-y-2">
           {installPromptEvt && <Button onClick={install} className="w-full">Tilføj til hjemmeskærm</Button>}
           {isIOS() && !isStandalone() && (
-            <p className="text-sm text-muted-foreground">På iPhone: tryk på del-ikonet i Safari → "Tilføj til hjemmeskærm".</p>
+            <p className="text-sm text-muted-foreground">På iPhone: tryk på del-ikonet i Safari → &quot;Tilføj til hjemmeskærm&quot;.</p>
           )}
           <form action={logout}>
             <Button type="submit" variant="outline" className="w-full">Log ud</Button>

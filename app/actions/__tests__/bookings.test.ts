@@ -32,6 +32,11 @@ vi.mock('@/db', () => {
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
 import { createBooking } from '@/app/actions/bookings'
+import { isoDateInCph } from '@/lib/time'
+
+// A date safely in the future (within the 14-day horizon) so PAST_SLOT never
+// trips these cases. Computed at runtime so the suite doesn't rot over time.
+const futureDate = isoDateInCph(new Date(Date.now() + 2 * 86_400_000))
 
 describe('createBooking', () => {
   beforeEach(() => {
@@ -44,7 +49,7 @@ describe('createBooking', () => {
     mockTx.select.mockReturnValue({
       from: () => ({ where: () => Promise.resolve([{ id: 'a' }, { id: 'b' }, { id: 'c' }]) }),
     })
-    const res = await createBooking({ date: '2026-05-18', hour: 14 })
+    const res = await createBooking({ date: futureDate, hour: 14 })
     expect(res).toEqual({ ok: false, code: 'MAX_3H_PER_DAY' })
   })
 
@@ -55,7 +60,7 @@ describe('createBooking', () => {
     mockTx.insert.mockReturnValue({
       values: () => ({ returning: () => Promise.reject(Object.assign(new Error('unique'), { code: '23505' })) }),
     })
-    const res = await createBooking({ date: '2026-05-18', hour: 14 })
+    const res = await createBooking({ date: futureDate, hour: 14 })
     expect(res).toEqual({ ok: false, code: 'SLOT_TAKEN' })
   })
 })

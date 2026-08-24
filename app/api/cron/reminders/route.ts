@@ -5,6 +5,13 @@ import { sendReminderPush } from '@/lib/push'
 
 export const runtime = 'nodejs'
 
+// Look-ahead window: a job is claimed once fireAt is within this many minutes of
+// now. It must be >= the external scheduler's poll interval, otherwise a job
+// whose fireAt lands between two polls would be sent late. Defaults to 5 min to
+// preserve historical behaviour; override via CRON_LOOKAHEAD_MINUTES if the
+// scheduler interval changes.
+const LOOKAHEAD_MINUTES = Number(process.env.CRON_LOOKAHEAD_MINUTES ?? '5')
+
 export async function GET(req: Request) {
   if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`)
     return new Response('Unauthorized', { status: 401 })
@@ -17,7 +24,7 @@ export async function GET(req: Request) {
     .set({ sentAt: new Date() })
     .where(and(
       isNull(schema.reminderJobs.sentAt),
-      lte(schema.reminderJobs.fireAt, sql`now() + interval '5 minutes'`),
+      lte(schema.reminderJobs.fireAt, sql`now() + make_interval(mins => ${LOOKAHEAD_MINUTES})`),
     ))
     .returning({ bookingId: schema.reminderJobs.bookingId })
 
