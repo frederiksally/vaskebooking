@@ -57,27 +57,37 @@ function computeStatus(bookings: BookingLite[], now: Date): Status {
   }
 }
 
-// A shared "current minute" clock exposed through useSyncExternalStore. The
-// server snapshot is null (so we render nothing and avoid hydration drift); the
-// client snapshot is the current time, refreshed every minute and whenever the
-// tab becomes visible. A single interval is shared across all subscribers.
+// A shared "current minute" clock exposed through useSyncExternalStore.
+//
+// CONTRACT: getSnapshot must return a CACHED, referentially-stable value that
+// only changes when the underlying data actually changes — otherwise React
+// re-renders forever ("Maximum update depth exceeded" / minified error #185).
+// So we cache the timestamp as a number in `snapshot` and only advance it, from
+// the interval/visibility handlers, when the minute bucket actually changes.
+// `subscribe` must NOT mutate the snapshot as a side effect.
 const clock = {
   listeners: new Set<() => void>(),
   interval: null as ReturnType<typeof setInterval> | null,
   onVisible: null as (() => void) | null,
-  now: null as Date | null,
-  emit() {
-    clock.now = new Date()
+  // ms timestamp, rounded down to the minute; null until the first client tick.
+  snapshot: null as number | null,
+  tick() {
+    const minute = Math.floor(Date.now() / 60_000) * 60_000
+    if (minute === clock.snapshot) return // no change → don't notify (avoids churn)
+    clock.snapshot = minute
     for (const l of clock.listeners) l()
   },
   subscribe(listener: () => void): () => void {
-    if (clock.listeners.size === 0) {
-      clock.now = new Date()
-      clock.interval = setInterval(() => clock.emit(), 60_000)
-      clock.onVisible = () => document.visibilityState === 'visible' && clock.emit()
+    clock.listeners.add(listener)
+    // Promote to the current minute on first subscribe. This is a one-time,
+    // stable transition (null → fixed number): React re-renders once, then
+    // getSnapshot returns the same number until the minute actually changes.
+    clock.snapshot = Math.floor(Date.now() / 60_000) * 60_000
+    if (clock.interval === null) {
+      clock.interval = setInterval(() => clock.tick(), 30_000)
+      clock.onVisible = () => document.visibilityState === 'visible' && clock.tick()
       document.addEventListener('visibilitychange', clock.onVisible)
     }
-    clock.listeners.add(listener)
     return () => {
       clock.listeners.delete(listener)
       if (clock.listeners.size === 0) {
@@ -85,23 +95,26 @@ const clock = {
         if (clock.onVisible) document.removeEventListener('visibilitychange', clock.onVisible)
         clock.interval = null
         clock.onVisible = null
-        clock.now = null
       }
     }
+  },
+  getSnapshot(): number | null {
+    return clock.snapshot
   },
 }
 
 export function MachineStatus({ bookings }: Props) {
-  const now = useSyncExternalStore(
-    (l) => clock.subscribe(l),
-    () => clock.now,
+  const snapshot = useSyncExternalStore(
+    clock.subscribe,
+    clock.getSnapshot,
     () => null,
   )
 
-  // Render nothing on the server / first paint to avoid hydration drift.
-  if (!now) return null
+  // Render nothing on the server / first paint to avoid hydration drift. The
+  // client promotes `snapshot` to the current minute on mount via an effect.
+  if (snapshot === null) return null
 
-  const status = computeStatus(bookings, now)
+  const status = computeStatus(bookings, new Date(snapshot))
 
   if (status.kind === 'free') {
     const tail = status.until ? ` indtil ${status.until}` : ' resten af dagen'
